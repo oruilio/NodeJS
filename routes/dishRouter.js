@@ -21,19 +21,19 @@ dishRouter.route('/')
 .post((req, res, next) => {
     Dishes.create(req.body)
     .then((dish) => {
-        console.log('Dish Created ', dish);
+        console.log('Dish Created ', dish);        //console.log回复到console里
         res.statusCode = 200;
-        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Type', 'application/json');    //res里的内容才是返回到client-side的
         res.json(dish);
-    }, (err) => next(err))
-    .catch((err) => next(err));
+    }, (err) => next(err))                         //err针对(promo)=>{}
+    .catch((err) => next(err));                    //err针对 .then()
 })
 .put((req, res, next) => {
     res.statusCode = 403;
     res.end('PUT operation not supported on /dishes');
 })
 .delete((req, res, next) => {
-    Dishes.remove({})
+    Dishes.remove({})                              //此处没有save
     .then((resp) => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
@@ -126,7 +126,7 @@ dishRouter.route('/:dishId/comments')
             for (var i = (dish.comments.length -1); i >= 0; i--) {
                 dish.comments.id(dish.comments[i]._id).remove();    //remove/find...are all mongoose(mongoDB diriver) operation
             }
-            dish.save()                              //save after remove operation
+            dish.save()                              //save after remove operation (针对单个dish的)
             .then((dish) => {
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
