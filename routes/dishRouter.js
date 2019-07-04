@@ -11,7 +11,8 @@ dishRouter.use(bodyParser.json());
 
 dishRouter.route('/')
 .get((req,res,next) => {
-    Dishes.find({})
+    Dishes.find({})                //every time retrive dish information
+    .populate('comments.author')   //ensure the author field will be populated with the information as required
     .then((dishes) => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
@@ -46,6 +47,7 @@ dishRouter.route('/')
 dishRouter.route('/:dishId')
 .get((req,res,next) => {
     Dishes.findById(req.params.dishId)
+    .populate('comments.author')
     .then((dish) => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
@@ -81,6 +83,7 @@ dishRouter.route('/:dishId')
 dishRouter.route('/:dishId/comments')
 .get((req,res,next) => {
     Dishes.findById(req.params.dishId)
+    .populate('comments.author')
     .then((dish) => {
         if (dish != null) {
             res.statusCode = 200;
@@ -95,16 +98,21 @@ dishRouter.route('/:dishId/comments')
     }, (err) => next(err))
     .catch((err) => next(err));
 })
-.post(authenticate.verifyUser, (req, res, next) => {
+.post(authenticate.verifyUser, (req, res, next) => {   //[authenticate.verifyUser] have loaded the user information into the req.user (contain id)
     Dishes.findById(req.params.dishId)
     .then((dish) => {
         if (dish != null) {
+            req.body.author = req.user._id;
             dish.comments.push(req.body);
             dish.save()
             .then((dish) => {
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.json(dish);                
+                Dishes.findById(dish._id)
+                    .populate('comments.author')
+                    .then((dish) => {     //push the result back to the client should be done after we retrieve the information of the author
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.json(dish);     
+                    })            
             }, (err) => next(err));
         }
         else {
@@ -146,6 +154,7 @@ dishRouter.route('/:dishId/comments')
 dishRouter.route('/:dishId/comments/:commentId')
 .get((req,res,next) => {
     Dishes.findById(req.params.dishId)
+    .populate('comments.author')
     .then((dish) => {
         if (dish != null && dish.comments.id(req.params.commentId) != null) {
             res.statusCode = 200;
@@ -182,9 +191,13 @@ dishRouter.route('/:dishId/comments/:commentId')
             }
             dish.save()
             .then((dish) => {
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.json(dish);                
+                Dishes.findById(dish._id)
+                    .populate('comments.author')   //the author has been set as a id, but when send the dish information back to client
+                    .then((dish) => {              //we will sent back the whole information, so we need to populate the author information again
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.json(dish); 
+                    })               
             }, (err) => next(err));
         }
         else if (dish == null) {
@@ -207,9 +220,13 @@ dishRouter.route('/:dishId/comments/:commentId')
             dish.comments.id(req.params.commentId).remove();
             dish.save()
             .then((dish) => {
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.json(dish);                
+                Dishes.findById(dish._id)
+                    .populate('comments.author')
+                    .then((dish) => {
+                        res.statusCode = 200;
+                        res.setHeader('Content-Type', 'application/json');
+                        res.json(dish); 
+                    })             
             }, (err) => next(err));
         }
         else if (dish == null) {
