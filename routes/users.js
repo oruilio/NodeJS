@@ -3,12 +3,13 @@ const bodyParser = require('body-parser');
 var User = require('../models/user');
 var passport = require('passport');
 var authenticate = require('../authenticate');
+const cors = require('./cors');
 
 var router = express.Router();
 router.use(bodyParser.json());
 
 /* GET users listing. */
-router.get('/', authenticate.verifyUser, authenticate.verifyAdmin, function(req, res, next) {
+router.get('/', cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, function(req, res, next) {
   User.find({})
   .then((users) => {
     res.statusCode = 200;
@@ -18,7 +19,7 @@ router.get('/', authenticate.verifyUser, authenticate.verifyAdmin, function(req,
   .catch((err) => next(err)); 
 });
 
-router.post('/signup', (req, res, next) => {
+router.post('/signup', cors.corsWithOptions, (req, res, next) => {
   User.register(new User({username: req.body.username}),
     req.body.password, (err,user) =>{
     if(err) {
@@ -49,7 +50,7 @@ router.post('/signup', (req, res, next) => {
 });
 
 //first authenticate the user use username and password, then give the user token for further accessing
-router.post('/login', passport.authenticate('local'), (req, res) => {
+router.post('/login', cors.corsWithOptions, passport.authenticate('local'), (req, res) => {
   //If this function gets called, authentication was successful.
   //`req.user` contains the authenticated	user (load up the user property onto the request message
   var token = authenticate.getToken({_id: req.user._id});
@@ -58,7 +59,7 @@ router.post('/login', passport.authenticate('local'), (req, res) => {
   res.json({success: true, token: token, status: 'You are successfully logged in!'});
 })
 
-router.get('/logout', (req, res) => {
+router.get('/logout', cors.corsWithOptions, (req, res) => {
   if (req.session) {
     req.session.destroy();
     res.clearCookie('session-id');
