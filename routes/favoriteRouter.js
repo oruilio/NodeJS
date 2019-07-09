@@ -39,30 +39,17 @@ favoriteRouter.route('/')                                                   //if
             .catch((err) => next(err));  
         }
         else{                     //exists
-            var hasNew = false;
-
 			for(i in req.body){
 				if(favorite.dishes.indexOf(req.body[i]._id) === -1){   //no duplicity
 					favorite.dishes.push(req.body[i]);
-
-					if(!hasNew){
-						hasNew = true;
-					}
 				}
 			}	
-
 			res.statusCode = 200;
 			res.setHeader('Content-Type', 'application/json');
-
-			if(hasNew){
-				favorite.save()
-				.then((favorite) => {
-					res.json(favorite);	
-				}, (err) => next(err));
-			}
-			else{
+            favorite.save()
+			.then((favorite) => {
 				res.json(favorite);	
-			}
+			}, (err) => next(err));
         }
     },(err)=>next(err))
     .catch((err) => next(err));
