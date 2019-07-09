@@ -25,8 +25,8 @@ favoriteRouter.route('/')                                                   //if
 })
 .post(cors.cors, authenticate.verifyUser, (req,res,next) => {
     Favorites.findOne({user: req.user._id})      //use user_id to find the specific favorite document
-    .then((favorites) => {
-        if(!favorites){          //if the favorite document not exists
+    .then((favorite) => {
+        if(favorite == null){          //if the favorite document not exists
             Favorites.create({
                 user: req.user._id,
                 dishes: req.body
@@ -39,28 +39,30 @@ favoriteRouter.route('/')                                                   //if
             .catch((err) => next(err));  
         }
         else{                     //exists
-            const length = favorites.dishes.length-1
-            for(var i=req.body.length-1; i>=0; i--){              //check the duplicity of dishes in the req.body
-                for(var j=length; j>=0; j--){
-                    if(favorites.dishes[j]._id.equals(req.body[i]._id)){    
-                        i--;
-                        j=length;
-                    }
-                }
-                if(j<0){
-                    favorites.dishes.push(req.body[i]._id);        //push the ones that are still unique     
-                }
-            }
-            favorites.save()
-            .then((favorite) => {
-                Favorites.findOne({user: req.user._id})
-                    .then((favorite) => {
-                        res.statusCode = 200;
-                        res.setHeader('Content-Type', 'application/json');
-                        res.json(favorite);    
-                    })
-            },(err)=>next(err))
-            .catch((err) => next(err));   
+            var hasNew = false;
+
+			for(i in req.body){
+				if(favorite.dishes.indexOf(req.body[i]._id) === -1){   //no duplicity
+					favorite.dishes.push(req.body[i]);
+
+					if(!hasNew){
+						hasNew = true;
+					}
+				}
+			}	
+
+			res.statusCode = 200;
+			res.setHeader('Content-Type', 'application/json');
+
+			if(hasNew){
+				favorite.save()
+				.then((favorite) => {
+					res.json(favorite);	
+				}, (err) => next(err));
+			}
+			else{
+				res.json(favorite);	
+			}
         }
     },(err)=>next(err))
     .catch((err) => next(err));
