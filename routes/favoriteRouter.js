@@ -31,11 +31,15 @@ favoriteRouter.route('/')                                                   //if
                 user: req.user._id,
                 dishes: req.body
             })
-            .then((favorite) => {
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');    //res里的内容才是返回到client-side的
-                res.json(favorite);    
-            },(err)=>next(err))
+            favorite.save()
+			.then((favorite) => {
+                Favorites.finById(favorite._id).populate('user').populate('dishes')
+                .then((favorite)=>{
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');    //res里的内容才是返回到client-side的
+                    res.json(favorite);  
+                })
+			})
             .catch((err) => next(err));  
         }
         else{                     //exists
@@ -48,8 +52,14 @@ favoriteRouter.route('/')                                                   //if
 			res.setHeader('Content-Type', 'application/json');
             favorite.save()
 			.then((favorite) => {
-				res.json(favorite);	
-			}, (err) => next(err));
+                Favorites.finById(favorite._id).populate('user').populate('dishes')
+                .then((favorite)=>{
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');    //res里的内容才是返回到client-side的
+                    res.json(favorite);  
+                })
+            })
+            .catch((err) => next(err));
         }
     },(err)=>next(err))
     .catch((err) => next(err));
@@ -65,6 +75,30 @@ favoriteRouter.route('/')                                                   //if
 })
 
 favoriteRouter.route('/:dishId')
+.options(cors.corsWithOptions, (req, res) => { res.sendStatus(200); }) 
+.get(cors.cors, authenticate.verifyUser, (req,res,next) => {
+    Favorites.findeOne({user:req.user._id})
+    .then((favorites) => {
+        if(!favorites){
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            return res.json({"exists": false, "favorites": favorites });
+        }
+        else{
+            if(favorites.dishes.indexOf(req.params.dishId) < 0){
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                return res.json({"exists": false, "favorites": favorites });
+            }
+            else{
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                return res.json({"exists": true, "favorites": favorites }); 
+            }
+        }
+    },(err)=>next(err))
+    .catch((err)=>next(err))
+})
 .post(cors.cors, authenticate.verifyUser, (req,res,next) => {
     Favorites.findOne({user: req.user._id})      //use user_id to find the specific favorite document
     .then((favorites) => {
@@ -73,11 +107,15 @@ favoriteRouter.route('/:dishId')
                 user: req.user._id,
                 dishes: [req.params.dishId]
             })
-            .then((favorite) => {
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');    //res里的内容才是返回到client-side的
-                res.json(favorite);    
-            },(err)=>next(err))
+            favorite.save()
+			.then((favorite) => {
+                Favorites.finById(favorite._id).populate('user').populate('dishes')
+                .then((favorite)=>{
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');    //res里的内容才是返回到client-side的
+                    res.json(favorite);  
+                })
+			})
             .catch((err) => next(err));  
         }
         else{                     //exists
@@ -89,15 +127,15 @@ favoriteRouter.route('/:dishId')
                 }      
             }
             favorites.dishes.push(req.params.dishId);        //push into the document
-            favorites.save()
-            .then((favorite) => {
-                Favorites.findOne({user: req.user._id})
-                    .then((favorite) => {
-                        res.statusCode = 200;
-                        res.setHeader('Content-Type', 'application/json');
-                        res.json(favorite);    
-                    })
-            },(err)=>next(err))
+            favorite.save()
+			.then((favorite) => {
+                Favorites.finById(favorite._id).populate('user').populate('dishes')
+                .then((favorite)=>{
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');    //res里的内容才是返回到client-side的
+                    res.json(favorite);  
+                })
+			})
             .catch((err) => next(err));   
         }
     },(err)=>next(err))
@@ -111,11 +149,14 @@ favoriteRouter.route('/:dishId')
                 if(favorite.dishes[i]._id.equals(req.params.dishId)){     //if the favorite exists
                     favorite.dishes.splice(i,1);
                     favorite.save()
-                    .then( (favorite) => {
-                        res.statusCode = 200;
-                        res.setHeader('Content-Type', 'application/json');
-                        res.json(favorite);    
-                    },(err) => next(err))
+                    .then((favorite) => {
+                        Favorites.finById(favorite._id).populate('user').populate('dishes')
+                        .then((favorite)=>{
+                            res.statusCode = 200;
+                            res.setHeader('Content-Type', 'application/json');    //res里的内容才是返回到client-side的
+                            res.json(favorite);  
+                        })
+                    })
                     break;
                 }      
             }
